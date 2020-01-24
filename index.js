@@ -67,24 +67,34 @@ export default class Barcode extends PureComponent {
     const encoded = this.encode(this.props.value, encoder, this.props);
 
     if (encoded) {
-      this.state.bars = this.drawSvgBarCode(encoded, this.props);
-      this.state.barCodeWidth = encoded.data.length * this.props.width;
+      const data = this.retrieveBinaryFromEncoding(encoded);
+      this.state.bars = this.drawSvgBarCode(data, this.props);
+      this.state.barCodeWidth = data.length * this.props.width;
     }
   }
 
-  drawSvgBarCode(encoding, options = {}) {
+  retrieveBinaryFromEncoding(encoded) {
+    let data = "";
+    if (Array.isArray(encoded)) {
+      for (let i=0; i < encoded.length; i++) {
+        data += encoded[i].data;
+      }
+    } else {
+      data = encoded.data;
+    }
+    return data;
+  }
+
+  drawSvgBarCode(data, options = {}) {
     const rects = [];
-    // binary data of barcode
-    const binary = encoding.data;
 
     let barWidth = 0;
     let x = 0;
     let yFrom = 0;
-    // alert(JSON.stringify(options));
 
-    for (let b = 0; b < binary.length; b++) {
+    for (let b = 0; b < data.length; b++) {
       x = b * options.width;
-      if (binary[b] === '1') {
+      if (data[b] === '1') {
         barWidth++;
       } else if (barWidth > 0) {
         rects[rects.length] = this.drawRect(
@@ -97,7 +107,6 @@ export default class Barcode extends PureComponent {
       }
     }
 
-    // Last draw is needed since the barcode ends with 1
     if (barWidth > 0) {
       rects[rects.length] = this.drawRect(
         x - options.width * (barWidth - 1),
